@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>graveart</title>
+
+<style>
+body {
+  background: white;
+  margin: 0;
+  text-align: center;
+  overflow-x: hidden;
+}
+
+h1 {
+  font-family: "Times New Roman";
+  font-size: 60px;
+  margin-top: 20px;
+  font-weight: normal;
+}
+
+.subtitle {
+  font-family: "Times New Roman";
+  font-size: 18px;
+  margin-top: -20px;
+  margin-bottom: 20px;
+}
+
+canvas {
+  border: 1px solid black;
+  background: white;
+  cursor: crosshair;
+}
+
+.controls {
+  margin: 10px;
+}
+
+input, button {
+  margin: 5px;
+}
+
+.gallery img {
+  width: 300px;
+  border: 1px solid black;
+  margin: 10px;
+}
+
+/* Shooting stars */
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: black;
+  animation: shoot 5s linear infinite;
+}
+
+@keyframes shoot {
+  0% { transform: translate(0,0); opacity: 1; }
+  100% { transform: translate(300px,300px); opacity: 0; }
+}
+
+/* Footer */
+.footer {
+  margin-top: 50px;
+  font-family: "Times New Roman";
+  font-size: 12px;
+  color: black;
+}
+</style>
+</head>
+
+<body>
+
+<h1>graveart</h1>
+<div class="subtitle">give your art a grave</div>
+
+<canvas id="canvas" width="800" height="500"></canvas>
+
+<div class="controls">
+  <input type="color" id="colorPicker">
+  <input type="range" id="brushSize" min="1" max="50" value="5">
+  <button onclick="setMode('draw')">Brush</button>
+  <button onclick="setMode('erase')">Eraser</button>
+  <button onclick="clearCanvas()">Clear</button>
+</div>
+
+<div>
+  <input type="text" id="artist" placeholder="Artist Name">
+  <input type="text" id="title" placeholder="Artwork Title">
+  <button onclick="postArt()">Post</button>
+</div>
+
+<h2>Gallery</h2>
+<div class="gallery" id="gallery"></div>
+
+<div class="footer">
+  © MADE BY ILOSAZOLO
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let drawing = false;
+let mode = "draw";
+
+canvas.addEventListener("mousedown", () => drawing = true);
+canvas.addEventListener("mouseup", () => {
+  drawing = false;
+  ctx.beginPath();
+});
+canvas.addEventListener("mousemove", draw);
+
+function draw(e) {
+  if (!drawing) return;
+
+  const color = document.getElementById("colorPicker").value;
+  const size = document.getElementById("brushSize").value;
+
+  ctx.lineWidth = size;
+  ctx.lineCap = "round";
+
+  if (mode === "erase") {
+    ctx.globalCompositeOperation = "destination-out";
+  } else {
+    ctx.globalCompositeOperation = "source-over";
+    ctx.strokeStyle = color;
+  }
+
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(e.offsetX, e.offsetY);
+}
+
+function setMode(m) {
+  mode = m;
+}
+
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function postArt() {
+  const artist = document.getElementById("artist").value;
+  const title = document.getElementById("title").value;
+  const image = canvas.toDataURL();
+
+  const gallery = document.getElementById("gallery");
+
+  const div = document.createElement("div");
+  div.innerHTML = `
+    <p><b>${title}</b> by ${artist}</p>
+    <img src="${image}">
+  `;
+
+  gallery.prepend(div);
+}
+
+/* Generate shooting stars */
+for (let i = 0; i < 20; i++) {
+  let star = document.createElement("div");
+  star.className = "star";
+  star.style.top = Math.random() * window.innerHeight + "px";
+  star.style.left = Math.random() * window.innerWidth + "px";
+  document.body.appendChild(star);
+}
+</script>
+
+</body>
+</html>
+
