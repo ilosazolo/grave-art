@@ -74,7 +74,8 @@ input, button {
 <h1>graveart</h1>
 <div class="subtitle">give your art a grave</div>
 
-<canvas id="canvas" width="800" height="500"></canvas>
+<canvas id="canvas"></canvas>
+
 
 <div class="controls">
   <input type="color" id="colorPicker">
@@ -97,7 +98,40 @@ input, button {
   © MADE BY ILOSAZOLO
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDZu-uc7NCYz4DiYaEN0NVD55Q--gQQd5s",
+  authDomain: "graveart.firebaseapp.com",
+  projectId: "graveart",
+  storageBucket: "graveart.firebasestorage.app",
+  messagingSenderId: "785378449001",
+  appId: "1:785378449001:web:bb73207c4bd0d63c7c34f8",
+  measurementId: "G-7HR26M8101"
+};
+
+  function resizeCanvas() {
+  const canvas = document.getElementById("canvas");
+  canvas.width = window.innerWidth * 0.9; // 90% of screen width
+  canvas.height = window.innerHeight * 0.5; // 50% of screen height
+}
+
+window.addEventListener('resize', () => {
+  const data = canvas.toDataURL(); // save current drawing
+  resizeCanvas();
+  const img = new Image();
+  img.src = data;
+  img.onload = () => ctx.drawImage(img, 0, 0); // restore drawing
+});
+
+resizeCanvas(); // initial size on page load
+
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
@@ -131,7 +165,6 @@ function endDraw() {
 
 function draw(e) {
   if (!drawing) return;
-
   e.preventDefault();
 
   const pos = getPosition(e);
@@ -157,34 +190,53 @@ function draw(e) {
 canvas.addEventListener("mousedown", startDraw);
 canvas.addEventListener("mouseup", endDraw);
 canvas.addEventListener("mousemove", draw);
-
 canvas.addEventListener("touchstart", startDraw);
 canvas.addEventListener("touchend", endDraw);
 canvas.addEventListener("touchmove", draw);
 
-function setMode(m) {
+window.setMode = function(m) {
   mode = m;
-}
+};
 
-function clearCanvas() {
+window.clearCanvas = function() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
+};
 
-function postArt() {
+window.postArt = async function() {
   const artist = document.getElementById("artist").value;
   const title = document.getElementById("title").value;
   const image = canvas.toDataURL();
 
+  await addDoc(collection(db, "artworks"), {
+    artist: artist,
+    title: title,
+    image: image,
+    createdAt: Date.now()
+  });
+
+  alert("Art posted to graveart 🖤");
+  loadGallery();
+};
+
+async function loadGallery() {
+  const q = query(collection(db, "artworks"), orderBy("createdAt", "desc"));
+  const querySnapshot = await getDocs(q);
+
   const gallery = document.getElementById("gallery");
+  gallery.innerHTML = "";
 
-  const div = document.createElement("div");
-  div.innerHTML = `
-    <p><b>${title}</b> by ${artist}</p>
-    <img src="${image}">
-  `;
-
-  gallery.prepend(div);
+  querySnapshot.forEach((doc) => {
+    const data = doc.data();
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <p><b>${data.title}</b> by ${data.artist}</p>
+      <img src="${data.image}">
+    `;
+    gallery.appendChild(div);
+  });
 }
+
+loadGallery();
 
 /* Shooting stars */
 for (let i = 0; i < 20; i++) {
@@ -197,7 +249,9 @@ for (let i = 0; i < 20; i++) {
 </script>
 
 
+
 </body>
 </html>
+
 
 
