@@ -104,16 +104,37 @@ const ctx = canvas.getContext("2d");
 let drawing = false;
 let mode = "draw";
 
-canvas.addEventListener("mousedown", () => drawing = true);
-canvas.addEventListener("mouseup", () => {
+function getPosition(e) {
+  const rect = canvas.getBoundingClientRect();
+  if (e.touches) {
+    return {
+      x: e.touches[0].clientX - rect.left,
+      y: e.touches[0].clientY - rect.top
+    };
+  } else {
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+  }
+}
+
+function startDraw(e) {
+  drawing = true;
+  draw(e);
+}
+
+function endDraw() {
   drawing = false;
   ctx.beginPath();
-});
-canvas.addEventListener("mousemove", draw);
+}
 
 function draw(e) {
   if (!drawing) return;
 
+  e.preventDefault();
+
+  const pos = getPosition(e);
   const color = document.getElementById("colorPicker").value;
   const size = document.getElementById("brushSize").value;
 
@@ -127,11 +148,19 @@ function draw(e) {
     ctx.strokeStyle = color;
   }
 
-  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.lineTo(pos.x, pos.y);
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(e.offsetX, e.offsetY);
+  ctx.moveTo(pos.x, pos.y);
 }
+
+canvas.addEventListener("mousedown", startDraw);
+canvas.addEventListener("mouseup", endDraw);
+canvas.addEventListener("mousemove", draw);
+
+canvas.addEventListener("touchstart", startDraw);
+canvas.addEventListener("touchend", endDraw);
+canvas.addEventListener("touchmove", draw);
 
 function setMode(m) {
   mode = m;
@@ -157,7 +186,7 @@ function postArt() {
   gallery.prepend(div);
 }
 
-/* Generate shooting stars */
+/* Shooting stars */
 for (let i = 0; i < 20; i++) {
   let star = document.createElement("div");
   star.className = "star";
@@ -167,6 +196,8 @@ for (let i = 0; i < 20; i++) {
 }
 </script>
 
+
 </body>
 </html>
+
 
